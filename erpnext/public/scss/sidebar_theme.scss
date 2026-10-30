@@ -1,0 +1,102 @@
+/* Desk layout + sidebar — colours come from brand_theme.scss */
+
+/* Remove Bootstrap container gutters so home/desk is edge-to-edge */
+body.frappe-desk,
+body[data-route],
+body {
+	.container,
+	.container.page-body,
+	.page-head .container,
+	.navbar .container {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+
+	&.full-width .container {
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+}
+
+.layout-side-section {
+	background-color: var(--theme-sidebar-bg);
+	color: var(--theme-sidebar-fg);
+	border-radius: var(--border-radius-lg);
+	padding: var(--padding-md);
+	margin-right: 12px;
+
+	.sidebar-label,
+	.standard-sidebar-label,
+	.sidebar-menu h6,
+	.sidebar-menu .h6,
+	.form-sidebar .modified-by,
+	.form-sidebar .created-by,
+	.form-sidebar .pageview-count,
+	.list-sidebar .list-sidebar-button,
+	.tags-placeholder {
+		color: var(--theme-sidebar-muted);
+	}
+
+	.standard-sidebar-item {
+		color: var(--theme-sidebar-fg);
+
+		> a,
+		.item-anchor,
+		.sidebar-item-label {
+			color: var(--theme-sidebar-fg);
+		}
+
+		&:hover,
+		&:focus-within,
+		&.selected {
+			background-color: var(--theme-sidebar-hover);
+		}
+
+		&.selected {
+			background-color: var(--theme-sidebar-selected);
+			box-shadow: inset 3px 0 0 var(--theme-brand);
+		}
+
+		svg,
+		.icon {
+			--icon-stroke: var(--theme-sidebar-fg);
+		}
+	}
+
+	a {
+		color: var(--theme-sidebar-fg);
+
+		&:hover,
+		&:focus {
+			color: var(--theme-sidebar-fg);
+		}
+	}
+
+	.sidebar-label .icon,
+	.desk-sidebar .icon,
+	.form-sidebar .icon {
+		--icon-stroke: var(--theme-sidebar-muted);
+	}
+
+	.overlay-sidebar {
+		@media (max-width: 991px) {
+			background: var(--theme-sidebar-bg);
+		}
+	}
+}
+
+[data-page-route="Workspaces"] {
+	.layout-side-section {
+		border-radius: 0;
+		margin-right: 0;
+		padding-right: 15px;
+	}
+}
+
+/* Left desk sidebar (workspace list) also uses theme navy */
+.desk-sidebar,
+.standard-sidebar-section {
+	.standard-sidebar-label {
+		color: var(--theme-muted);
+	}
+}

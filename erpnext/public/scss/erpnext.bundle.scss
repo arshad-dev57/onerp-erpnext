@@ -1,3 +1,7 @@
+/* Shared brand tokens (same file login uses) */
+@import "../../../../frappe/frappe/public/scss/brand_theme";
 @import "./erpnext";
 @import "./call_popup";
 @import "./point-of-sale";
+@import "./sidebar_theme";
+@import "./home_workspace";

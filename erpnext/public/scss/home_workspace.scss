@@ -1,0 +1,198 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+/* =========================================================
+   Home workspace – Odoo-style app tiles + module cards
+   Colours: brand_theme.scss (--theme-* / --hw-*)
+   Layout: 1 header | 2-6 shortcuts | 7 spacer | 8 header | 9-12 cards
+   ========================================================= */
+
+/* ---------- Page ---------- */
+.page-container[data-page-route="Workspaces"] {
+	background: var(--hw-bg);
+	font-family: var(--theme-font);
+}
+
+.page-container[data-page-route="Workspaces"] .layout-main-section {
+	padding: 28px 8px;
+}
+
+/* ---------- Section headings ---------- */
+.page-container[data-page-route="Workspaces"] .ce-block:has(.ce-header) .h4,
+.page-container[data-page-route="Workspaces"] .ce-header .h4 {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--hw-navy);
+	letter-spacing: -0.01em;
+}
+
+.page-container[data-page-route="Workspaces"] .ce-header .h4::before {
+	content: "";
+	width: 5px;
+	height: 22px;
+	border-radius: 4px;
+	background: var(--hw-brand);
+}
+
+/* =========================================================
+   QUICK ACCESS  →  Odoo-like app tiles
+   ========================================================= */
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 14px;
+	min-height: 170px;
+	padding: 26px 12px 18px;
+	background: #fff;
+	border: 1px solid var(--hw-border);
+	border-radius: var(--hw-radius);
+	box-shadow: 0 1px 2px rgba(22, 35, 47, 0.04);
+	text-align: center;
+	cursor: pointer;
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box:hover {
+	transform: translateY(-4px);
+	border-color: transparent;
+	box-shadow: 0 14px 30px rgba(22, 35, 47, 0.12);
+}
+
+/* app icon square */
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box::before {
+	content: "";
+	width: 68px;
+	height: 68px;
+	border-radius: 20px;
+	background: linear-gradient(135deg, var(--tile-a, #e8643a), var(--tile-b, #f09a78));
+	box-shadow: 0 8px 18px var(--tile-shadow, rgba(232, 100, 58, 0.35));
+	/* white cube glyph */
+	-webkit-mask: none;
+	background-image:
+		url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z'/><path d='M12 12l8-4.5M12 12v9M12 12L4 7.5'/></svg>"),
+		linear-gradient(135deg, var(--tile-a, #e8643a), var(--tile-b, #f09a78));
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 34px 34px, 100% 100%;
+}
+
+/* label */
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .widget-title,
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .widget-head {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .widget-title,
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .ellipsis {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--hw-navy);
+}
+
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .widget-title svg,
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .widget-control {
+	display: none;
+}
+
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .indicator-pill,
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box .indicator-pill-no-indicator {
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+/* per-tile colours (blocks 2–6) */
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(2) .shortcut-widget-box { --tile-a:#3b82f6; --tile-b:#7db3ff; --tile-shadow:rgba(59,130,246,.35); }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(3) .shortcut-widget-box { --tile-a:#e8643a; --tile-b:#f3a07f; --tile-shadow:rgba(232,100,58,.35); }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(4) .shortcut-widget-box { --tile-a:#10b981; --tile-b:#5fd8b0; --tile-shadow:rgba(16,185,129,.35); }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(5) .shortcut-widget-box { --tile-a:#8b5cf6; --tile-b:#b9a0fb; --tile-shadow:rgba(139,92,246,.35); }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(6) .shortcut-widget-box { --tile-a:#16232f; --tile-b:#3a5167; --tile-shadow:rgba(22,35,47,.35); }
+
+/* =========================================================
+   MODULES  →  clean cards
+   ========================================================= */
+.page-container[data-page-route="Workspaces"] .links-widget-box {
+	height: 100%;
+	padding: 22px 20px 16px;
+	background: #fff;
+	border: 1px solid var(--hw-border);
+	border-top: 4px solid var(--card-accent, var(--hw-brand));
+	border-radius: var(--hw-radius);
+	box-shadow: 0 1px 2px rgba(22, 35, 47, 0.04);
+	transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 14px 30px rgba(22, 35, 47, 0.1);
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box .widget-head {
+	padding: 0 0 12px;
+	margin-bottom: 8px;
+	border-bottom: 1px solid var(--hw-border);
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box .widget-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--hw-navy);
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box .widget-title::before {
+	content: "";
+	width: 12px;
+	height: 12px;
+	border-radius: 4px;
+	background: var(--card-accent, var(--hw-brand));
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--card-accent, #e8643a) 18%, transparent);
+}
+
+/* link rows */
+.page-container[data-page-route="Workspaces"] .links-widget-box .link-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 10px;
+	margin: 2px -10px;
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--hw-muted);
+	transition: background 0.15s, color 0.15s, padding-left 0.15s;
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box .link-item:hover {
+	background: color-mix(in srgb, var(--hw-brand) 9%, #fff);
+	color: var(--hw-brand-dark);
+	padding-left: 14px;
+	text-decoration: none;
+}
+
+.page-container[data-page-route="Workspaces"] .links-widget-box .link-item .indicator-pill,
+.page-container[data-page-route="Workspaces"] .links-widget-box .link-content + .indicator {
+	display: none;
+}
+
+/* per-card accent (blocks 9–12) */
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(9)  .links-widget-box { --card-accent: #3b82f6; }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(10) .links-widget-box { --card-accent: #e8643a; }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(11) .links-widget-box { --card-accent: #10b981; }
+.page-container[data-page-route="Workspaces"] .ce-block:nth-child(12) .links-widget-box { --card-accent: #8b5cf6; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991px) {
+	.page-container[data-page-route="Workspaces"] .shortcut-widget-box { min-height: 150px; }
+}
