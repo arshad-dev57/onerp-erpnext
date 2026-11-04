@@ -13,17 +13,32 @@ from frappe.auth import LoginManager
 from frappe.utils import cint, cstr, escape_html, validate_email_address
 from frappe.utils.password import update_password
 
+from erpnext.api.saas import create_tenant
+
 
 # No System Manager — that role bypasses User Permissions and leaks other companies.
+# Manager alone is not enough: ERPNext grants Customer to Sales User / Sales Master
+# Manager and Item to Item Manager, so the owner needs the User + Master tiers too.
 COMPANY_OWNER_ROLES = (
 	"Accounts Manager",
+	"Accounts User",
 	"Sales Manager",
+	"Sales User",
+	"Sales Master Manager",
 	"Purchase Manager",
+	"Purchase User",
+	"Purchase Master Manager",
 	"Stock Manager",
+	"Stock User",
+	"Item Manager",
 	"Manufacturing Manager",
+	"Manufacturing User",
 	"HR Manager",
+	"HR User",
 	"Projects Manager",
+	"Projects User",
 	"Inbox User",
+	"Report Manager",
 )
 
 
@@ -257,6 +272,14 @@ def register_company(
 
 		# Strict company isolation (single-site SaaS)
 		_ensure_company_user_permission(user.name, company.name)
+
+		create_tenant(
+			owner_email=email,
+			company_name=company.name,
+			country=country,
+			currency=currency,
+			phone=phone,
+		)
 
 		frappe.db.commit()
 	except Exception:

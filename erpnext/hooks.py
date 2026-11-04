@@ -326,9 +326,14 @@ period_closing_doctypes = [
 	"Subcontracting Receipt",
 ]
 
+permission_query_conditions = {
+	"User": "erpnext.api.saas.user_permission_query_conditions",
+}
+
 doc_events = {
 	"*": {
 		"validate": [
+			"erpnext.api.saas.validate_tenant_active",
 			"erpnext.support.doctype.service_level_agreement.service_level_agreement.apply",
 			"erpnext.setup.doctype.transaction_deletion_record.transaction_deletion_record.check_for_running_deletion_job",
 		],
@@ -660,6 +665,7 @@ additional_timeline_content = {"*": ["erpnext.telephony.doctype.call_log.call_lo
 extend_bootinfo = [
 	"erpnext.support.doctype.service_level_agreement.service_level_agreement.add_sla_doctypes",
 	"erpnext.startup.boot.bootinfo",
+	"erpnext.api.saas.add_bootinfo",
 ]
 
 

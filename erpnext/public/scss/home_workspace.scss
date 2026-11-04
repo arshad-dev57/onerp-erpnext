@@ -38,8 +38,10 @@
 
 /* =========================================================
    QUICK ACCESS  →  Odoo-like app tiles
+   (:not(.skeleton-card) keeps the workspace loading skeleton
+   as grey placeholders instead of half-styled tiles)
    ========================================================= */
-.page-container[data-page-route="Workspaces"] .shortcut-widget-box {
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box:not(.skeleton-card) {
 	position: relative;
 	display: flex;
 	flex-direction: column;
@@ -57,14 +59,14 @@
 	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.page-container[data-page-route="Workspaces"] .shortcut-widget-box:hover {
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box:not(.skeleton-card):hover {
 	transform: translateY(-4px);
 	border-color: transparent;
 	box-shadow: 0 14px 30px rgba(22, 35, 47, 0.12);
 }
 
 /* app icon square */
-.page-container[data-page-route="Workspaces"] .shortcut-widget-box::before {
+.page-container[data-page-route="Workspaces"] .shortcut-widget-box:not(.skeleton-card)::before {
 	content: "";
 	width: 68px;
 	height: 68px;
@@ -120,7 +122,7 @@
 /* =========================================================
    MODULES  →  clean cards
    ========================================================= */
-.page-container[data-page-route="Workspaces"] .links-widget-box {
+.page-container[data-page-route="Workspaces"] .links-widget-box:not(.skeleton-card) {
 	height: 100%;
 	padding: 22px 20px 16px;
 	background: #fff;
@@ -131,7 +133,7 @@
 	transition: box-shadow 0.18s ease, transform 0.18s ease;
 }
 
-.page-container[data-page-route="Workspaces"] .links-widget-box:hover {
+.page-container[data-page-route="Workspaces"] .links-widget-box:not(.skeleton-card):hover {
 	transform: translateY(-3px);
 	box-shadow: 0 14px 30px rgba(22, 35, 47, 0.1);
 }
@@ -194,5 +196,5 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 991px) {
-	.page-container[data-page-route="Workspaces"] .shortcut-widget-box { min-height: 150px; }
+	.page-container[data-page-route="Workspaces"] .shortcut-widget-box:not(.skeleton-card) { min-height: 150px; }
 }
