@@ -10,7 +10,7 @@ import re
 import frappe
 from frappe import _
 from frappe.auth import LoginManager
-from frappe.utils import cint, cstr, escape_html, validate_email_address
+from frappe.utils import cint, cstr, strip_html_tags, validate_email_address, validate_url
 from frappe.utils.password import update_password
 
 from erpnext.api.saas import create_tenant
@@ -48,7 +48,25 @@ def _require_signup_enabled() -> None:
 
 
 def _clean(value: str | None, max_len: int = 140) -> str:
-	return escape_html((value or "").strip())[:max_len]
+	# Tags are dropped, not escaped: Frappe escapes on render, and storing the
+	# escaped text turns "Smith & Sons" into "Smith &amp; Sons" in the database.
+	return strip_html_tags((value or "").strip()).strip()[:max_len]
+
+
+def _normalize_phone(value: str) -> str:
+	"""Store numbers in the international form the rest of the stack expects."""
+	digits = re.sub(r"[\s\-().+]", "", value or "")
+	if digits.startswith("00"):
+		digits = digits[2:]
+	elif digits.startswith("0"):
+		digits = "92" + digits[1:]
+
+	if not re.fullmatch(r"\d{9,15}", digits):
+		frappe.throw(
+			_("Enter a valid phone number, e.g. 03112345678 or +92 311 2345678."),
+			title=_("Invalid Phone Number"),
+		)
+	return digits
 
 
 def _make_abbr(company_name: str) -> str:
@@ -105,6 +123,33 @@ def _ensure_base_fixtures(country: str) -> None:
 		warehouse_type.insert()
 
 
+def _ensure_setup_complete() -> None:
+	"""Lift the desk's forced Setup Wizard redirect once the site has real data.
+
+	Frappe reroutes every /app visit to the Setup Wizard while Installed
+	Application.is_setup_complete is 0, and only recomputes that during install or
+	migrate -- so a wizard-less site sends a new owner to a page their roles cannot
+	open ("Not permitted"). Mark it the way Frappe would, from the same conditions.
+	"""
+	if frappe.is_setup_complete():
+		return
+
+	from frappe.core.doctype.installed_applications.installed_applications import (
+		has_company,
+		has_non_admin_user,
+	)
+	from frappe.desk.page.setup_wizard.setup_wizard import enable_setup_wizard_complete
+
+	if not (has_company() and has_non_admin_user()):
+		return
+
+	for app_name in ("frappe", "erpnext"):
+		enable_setup_wizard_complete(app_name)
+
+	frappe.db.set_single_value("System Settings", "setup_complete", 1, update_modified=False)
+	frappe.clear_cache()
+
+
 def _ensure_company_user_permission(user: str, company: str) -> None:
 	"""Restrict the user to a single Company across company-aware DocTypes."""
 	existing = frappe.db.exists(
@@ -140,13 +185,27 @@ def get_registration_options() -> dict:
 		order_by="name asc",
 		limit_page_length=500,
 	)
+	fields = ["name", "currency_name", "symbol"]
 	currencies = frappe.get_all(
 		"Currency",
 		filters={"enabled": 1},
-		fields=["name", "currency_name", "symbol"],
+		fields=fields,
 		order_by="name asc",
 		limit_page_length=500,
 	)
+
+	# Registration enables whatever currency is picked, so the ones the form defaults to
+	# must be selectable on a fresh site -- otherwise the first signup has no local option.
+	offered = {c.name for c in currencies}
+	for extra in frappe.get_all(
+		"Currency",
+		filters={"name": ("in", ["PKR", "USD"])},
+		fields=fields,
+		order_by="name asc",
+	):
+		if extra.name not in offered:
+			currencies.append(extra)
+
 	return {
 		"countries": [c.name for c in countries],
 		"currencies": currencies,
@@ -181,7 +240,11 @@ def register_company(
 	first_name = _clean(first_name, 60)
 	last_name = _clean(last_name, 60)
 	email = (email or "").strip().lower()
-	phone = _clean(phone, 30)
+	if phone:
+		phone = _normalize_phone(_clean(phone, 30))
+	company_phone = company_phone or phone
+	if company_phone:
+		company_phone = _normalize_phone(_clean(company_phone, 30))
 	company_name = _clean(company_name, 140)
 	country = _clean(country, 100)
 	currency = _clean(currency, 10).upper()
@@ -189,9 +252,16 @@ def register_company(
 	company_address = _clean(company_address, 500)
 	tax_id = _clean(tax_id, 50)
 	website = _clean(website, 140)
-	company_phone = _clean(company_phone or phone, 30)
 	company_description = _clean(company_description, 1000)
 	domain = _clean(domain, 100)
+
+	if website:
+		if " " in website:
+			frappe.throw(_("Website must be a URL without spaces, e.g. https://example.com"))
+		if not website.startswith(("http://", "https://")):
+			website = "https://" + website
+		if not validate_url(website):
+			frappe.throw(_("Invalid website URL"))
 
 	if not first_name or not last_name:
 		frappe.throw(_("First name and last name are required"))
@@ -218,6 +288,15 @@ def register_company(
 	abbr = _make_abbr(company_name)
 	chart = _pick_chart_of_accounts(country)
 
+	# ERPNext names the root Cost Center "<company> - <abbr>", so a company name that
+	# fills tabCompany.name would overflow the child's 140-char name and 500 the signup.
+	if len(company_name) + len(abbr) + 3 > 140:
+		frappe.throw(
+			_("Company name is too long. Please use at most {0} characters.").format(
+				140 - len(abbr) - 3
+			)
+		)
+
 	frappe.flags.in_install = False
 	frappe.set_user("Administrator")
 
@@ -227,6 +306,9 @@ def register_company(
 		frappe.db.set_value("Currency", currency, "enabled", 1, update_modified=False)
 
 		roles = [{"role": role} for role in COMPANY_OWNER_ROLES if frappe.db.exists("Role", role)]
+		# mobile_no is unique in tabUser; a shared number is not a signup error because
+		# login is by email, so keep it in phone only and skip the duplicate mobile_no.
+		mobile_no = phone if phone and not frappe.db.exists("User", {"mobile_no": phone}) else None
 		user = frappe.get_doc(
 			{
 				"doctype": "User",
@@ -234,7 +316,7 @@ def register_company(
 				"first_name": first_name,
 				"last_name": last_name,
 				"phone": phone or None,
-				"mobile_no": phone or None,
+				"mobile_no": mobile_no,
 				"send_welcome_email": 0,
 				"user_type": "System User",
 				"enabled": 1,
@@ -308,6 +390,8 @@ def register_company(
 			currency=currency,
 			phone=phone,
 		)
+
+		_ensure_setup_complete()
 
 		frappe.db.commit()
 	except Exception:
