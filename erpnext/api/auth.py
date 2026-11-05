@@ -79,6 +79,32 @@ def _pick_chart_of_accounts(country: str) -> str:
 	return charts[0] if charts else "Standard"
 
 
+def _ensure_base_fixtures(country: str) -> None:
+	"""Seed ERPNext's base records the first time a site registers a company.
+
+	Sites built with `bench new-site --install-app erpnext` never run the Setup
+	Wizard, so records like Warehouse Type "Transit" don't exist -- and Company
+	creation makes a "Goods In Transit" warehouse that links to it, which fails
+	with "Could not find Warehouse Type: Transit".
+	"""
+	if frappe.db.exists("Warehouse Type", "Transit"):
+		return
+
+	try:
+		from erpnext.setup.setup_wizard.operations.install_fixtures import install
+
+		install(country)
+	except Exception:
+		frappe.log_error(title="Onerp base data install failed", message=frappe.get_traceback())
+
+	# install() skips individual records that error out, so guarantee the one
+	# Company creation cannot proceed without.
+	if not frappe.db.exists("Warehouse Type", "Transit"):
+		warehouse_type = frappe.get_doc({"doctype": "Warehouse Type", "name": "Transit"})
+		warehouse_type.flags.ignore_permissions = True
+		warehouse_type.insert()
+
+
 def _ensure_company_user_permission(user: str, company: str) -> None:
 	"""Restrict the user to a single Company across company-aware DocTypes."""
 	existing = frappe.db.exists(
@@ -196,6 +222,8 @@ def register_company(
 	frappe.set_user("Administrator")
 
 	try:
+		_ensure_base_fixtures(country)
+
 		frappe.db.set_value("Currency", currency, "enabled", 1, update_modified=False)
 
 		roles = [{"role": role} for role in COMPANY_OWNER_ROLES if frappe.db.exists("Role", role)]
