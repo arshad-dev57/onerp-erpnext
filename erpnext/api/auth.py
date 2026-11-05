@@ -123,6 +123,94 @@ def _ensure_base_fixtures(country: str) -> None:
 		warehouse_type.insert()
 
 
+# The Setup Wizard maps these countries to a non-January financial year; every other
+# country uses Jan 1 - Dec 31. Mirrors erpnext.setup.fiscal_years in setup_wizard.js.
+FISCAL_YEAR_START = {
+	"Afghanistan": "12-21",
+	"Australia": "07-01",
+	"Bangladesh": "07-01",
+	"Costa Rica": "10-01",
+	"Egypt": "07-01",
+	"Ethiopia": "07-08",
+	"Hong Kong": "04-01",
+	"India": "04-01",
+	"Iran": "06-23",
+	"Kenya": "07-01",
+	"Malaysia": "07-01",
+	"Myanmar": "04-01",
+	"Nepal": "07-16",
+	"New Zealand": "04-01",
+	"Pakistan": "07-01",
+	"Singapore": "04-01",
+	"South Africa": "03-01",
+	"Thailand": "10-01",
+	"United Kingdom": "04-01",
+}
+
+
+def _fiscal_year_window(country: str | None) -> tuple[str, str]:
+	"""The start/end dates of the financial year containing today for this country."""
+	from frappe.utils import add_days, add_years, getdate
+
+	start_month_day = FISCAL_YEAR_START.get(country or "", "01-01")
+	today = getdate(frappe.utils.today())
+	start = getdate(f"{today.year}-{start_month_day}")
+	if start > today:
+		start = add_years(start, -1)
+
+	# End date is derived rather than mapped so Fiscal Year.validate_dates always agrees.
+	return cstr(start), cstr(add_days(add_years(start, 1), -1))
+
+
+def _ensure_fiscal_year(company: str, country: str | None) -> None:
+	"""Give a company a Fiscal Year covering today.
+
+	The Accounting workspace renders a "Profit and Loss" chart whose report filters come
+	from erpnext.utils.get_fiscal_year(); with no Fiscal Year on the site that throws
+	"Start Year and End Year are mandatory" as a modal, right after signup, so a new
+	tenant reads it as a failed registration.
+	"""
+	from erpnext.accounts.utils import get_fiscal_years
+	from erpnext.setup.setup_wizard.operations.company_setup import get_fy_details
+
+	if get_fiscal_years(frappe.utils.today(), company=company, boolean=True):
+		return
+
+	start_date, end_date = _fiscal_year_window(country)
+	existing = frappe.db.get_value("Fiscal Year", {"year_start_date": start_date}, "name")
+
+	if existing:
+		# Same window, only linked to other tenants: join this company to it.
+		fy = frappe.get_doc("Fiscal Year", existing)
+		if not any(row.company == company for row in fy.get("companies", [])):
+			fy.append("companies", {"company": company})
+			fy.flags.ignore_permissions = True
+			fy.save()
+		return
+
+	fy = frappe.get_doc(
+		{
+			"doctype": "Fiscal Year",
+			"year": get_fy_details(start_date, end_date),
+			"year_start_date": start_date,
+			"year_end_date": end_date,
+			"companies": [{"company": company}],
+		}
+	)
+	fy.flags.ignore_permissions = True
+	fy.insert()
+
+
+def ensure_fiscal_years() -> None:
+	"""Backfill Fiscal Years for every company on the site; safe to re-run."""
+	for row in frappe.get_all("Company", fields=["name", "country"]):
+		try:
+			_ensure_fiscal_year(row.name, row.country)
+		except Exception:
+			# A missing financial year breaks a chart, not the tenant's data.
+			frappe.log_error(title=f"Onerp fiscal year setup failed for {row.name}", message=frappe.get_traceback())
+
+
 def _ensure_setup_complete() -> None:
 	"""Lift the desk's forced Setup Wizard redirect once the site has real data.
 
@@ -352,6 +440,9 @@ def register_company(
 		)
 		company.flags.ignore_permissions = True
 		company.insert()
+
+		# Also backfills tenants that registered before this heal existed.
+		ensure_fiscal_years()
 
 		if company_address:
 			try:
