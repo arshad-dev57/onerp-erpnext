@@ -10,7 +10,7 @@
  "icon": "integration",
  "idx": 0,
  "is_hidden": 0,
- "label": "ERPNext Integrations",
+ "label": "OneERP Integrations",
  "links": [
   {
    "hidden": 0,
@@ -224,5 +224,5 @@
    "url": "https://frappecloud.com/marketplace"
   }
  ],
- "title": "ERPNext Integrations"
+ "title": "OneERP Integrations"
 }
